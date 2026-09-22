@@ -1,0 +1,1879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mango Morphology & Ripeness Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Three.js & OrbitControls for 3D Container Packing Visualization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #0b0c10;
+            --card-bg: rgba(22, 24, 30, 0.65);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --accent-mango: #ff9f1c;
+            --accent-mango-rgb: 255, 159, 28;
+            --accent-green: #2ec4b6;
+            --accent-green-rgb: 46, 196, 182;
+            --accent-red: #ff3366;
+            --glass-blur: blur(16px);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Ambient background glow elements */
+        .glow-orange {
+            position: absolute;
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, rgba(var(--accent-mango-rgb), 0.15) 0%, rgba(0,0,0,0) 70%);
+            top: -100px;
+            right: -100px;
+            border-radius: 50%;
+            z-index: -1;
+            filter: blur(40px);
+            animation: float-slow 15s infinite alternate;
+        }
+
+        .glow-green {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(var(--accent-green-rgb), 0.12) 0%, rgba(0,0,0,0) 70%);
+            bottom: -150px;
+            left: -150px;
+            border-radius: 50%;
+            z-index: -1;
+            filter: blur(40px);
+            animation: float-slow 20s infinite alternate-reverse;
+        }
+
+        @keyframes float-slow {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(50px, 30px) scale(1.1); }
+        }
+
+        header {
+            padding: 2rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            backdrop-filter: blur(8px);
+            z-index: 10;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+            animation: spin-subtle 6s linear infinite;
+        }
+
+        @keyframes spin-subtle {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 30%, var(--accent-mango) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-green);
+        }
+
+        main {
+            flex: 1;
+            padding: 2.5rem 5%;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 2.5rem;
+            z-index: 5;
+        }
+
+        @media (max-width: 1024px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Glassmorphism Card Style */
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 2rem;
+            backdrop-filter: var(--glass-blur);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.45);
+        }
+
+        .panel-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 4px solid var(--accent-mango);
+            padding-left: 10px;
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 18px;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background: rgba(255, 255, 255, 0.02);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--accent-mango);
+            background: rgba(var(--accent-mango-rgb), 0.04);
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            color: var(--accent-mango);
+            transition: var(--transition);
+        }
+
+        .upload-area:hover .upload-icon {
+            transform: translateY(-5px);
+        }
+
+        .upload-text {
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .upload-subtext {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        /* Calibration Controls */
+        .controls-group {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-item label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .intrinsics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .input-styled {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 8px 12px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.9rem;
+            transition: var(--transition);
+            width: 100%;
+            min-width: 0;
+        }
+
+        .input-styled:focus {
+            outline: none;
+            border-color: var(--accent-mango);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-mango) 0%, #e65c00 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            color: white;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(var(--accent-mango-rgb), 0.3);
+            margin-top: 1.5rem;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(var(--accent-mango-rgb), 0.4);
+            filter: brightness(1.1);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        /* Results / Dashboard Placeholder */
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            min-height: 500px;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            color: var(--text-secondary);
+            gap: 15px;
+            padding: 4rem 1rem;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            opacity: 0.3;
+        }
+
+        /* Loaded Results View */
+        .results-view {
+            display: none; /* Shown dynamically */
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Summary Header Cards */
+        .summary-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 992px) {
+            .summary-cards-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .summary-cards-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .metric-mini-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .metric-mini-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        .metric-mini-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .ripeness-badge {
+            align-self: flex-start;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .ripeness-ripe {
+            background: rgba(var(--accent-mango-rgb), 0.15);
+            color: var(--accent-mango);
+            border: 1px solid rgba(var(--accent-mango-rgb), 0.3);
+            box-shadow: 0 0 10px rgba(var(--accent-mango-rgb), 0.1);
+        }
+
+        .ripeness-unripe {
+            background: rgba(var(--accent-green-rgb), 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(var(--accent-green-rgb), 0.3);
+            box-shadow: 0 0 10px rgba(var(--accent-green-rgb), 0.1);
+        }
+
+        .orientation-badge {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--card-border);
+            color: var(--text-primary);
+            align-self: flex-start;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* Navigation Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--card-border);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 8px 4px 12px 4px;
+            cursor: pointer;
+            position: relative;
+            transition: var(--transition);
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            color: var(--accent-mango);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--accent-mango);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        /* Visualizations Tab styling */
+        .viz-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .viz-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .viz-header {
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--card-border);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .viz-image-container {
+            position: relative;
+            padding-bottom: 75%; /* 4:3 Aspect Ratio */
+            background-color: #121216;
+            overflow: hidden;
+        }
+
+        .viz-image-container img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* Detailed Stats Grid */
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .category-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent-mango);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .category-title-seed {
+            color: var(--accent-green);
+        }
+
+        .stats-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .stat-row {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-row.highlight-stat-row {
+            background: rgba(var(--accent-mango-rgb), 0.08);
+            border: 1px dashed rgba(var(--accent-mango-rgb), 0.35);
+            box-shadow: 0 0 15px rgba(var(--accent-mango-rgb), 0.15);
+        }
+
+        .stat-label-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stat-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .stat-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .stat-value {
+            font-size: 1.15rem;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* Spinner / Overlay when loading */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(11, 12, 16, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(var(--accent-mango-rgb), 0.1);
+            border-top-color: var(--accent-mango);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: 0.5px;
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        /* Footer styling */
+        footer {
+            padding: 2rem;
+            text-align: center;
+            border-top: 1px solid var(--card-border);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: auto;
+        }
+
+        .info-pill {
+            background: rgba(var(--accent-mango-rgb), 0.08);
+            border: 1px solid rgba(var(--accent-mango-rgb), 0.2);
+            color: var(--accent-mango);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.85rem;
+            margin-top: 1rem;
+            display: flex;
+            gap: 8px;
+            line-height: 1.4;
+        }
+
+        /* Container Packing Tab styling */
+        .packing-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1.8fr;
+            gap: 2rem;
+            min-height: 550px;
+        }
+
+        @media (max-width: 992px) {
+            .packing-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .packing-control-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .packing-form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .packing-form-group label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .custom-dims-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .packing-results-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .packing-3d-viewport {
+            background: #08090c;
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            min-height: 550px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #packing-canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .viewport-overlay-controls {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            z-index: 5;
+            background: rgba(11, 12, 16, 0.8);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 6px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: var(--transition);
+        }
+
+        .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--accent-mango);
+        }
+
+        .viewport-loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(11, 12, 16, 0.95);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            transition: opacity 0.3s ease;
+        }
+
+        .viewport-loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(var(--accent-mango-rgb), 0.1);
+            border-radius: 50%;
+            border-top-color: var(--accent-mango);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        .packing-summary-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .packing-stat-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .packing-stat-box.highlight {
+            border-color: rgba(var(--accent-mango-rgb), 0.3);
+            background: rgba(var(--accent-mango-rgb), 0.05);
+        }
+
+        .packing-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .packing-stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .packing-stat-value.highlight {
+            color: var(--accent-mango);
+        }
+
+        .layers-breakdown {
+            max-height: 180px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 5px;
+        }
+
+        /* custom scrollbar */
+        .layers-breakdown::-webkit-scrollbar {
+            width: 4px;
+        }
+        .layers-breakdown::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .layers-breakdown::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+
+        .layer-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .layer-badge {
+            background: rgba(var(--accent-green-rgb), 0.15);
+            color: var(--accent-green);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="glow-orange"></div>
+    <div class="glow-green"></div>
+
+    <header>
+        <div class="logo-container">
+            <span class="logo-icon">🥭</span>
+            <div>
+                <h1>MangoMorph V3</h1>
+                <p style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;">Monocular Depth-Assisted Estimation</p>
+            </div>
+        </div>
+        <div class="status-badge">
+            <span class="status-dot"></span>
+            <span>FastAPI Server Connected</span>
+        </div>
+    </header>
+
+    <main>
+        <!-- Left Column: Operations -->
+        <section class="glass-card" style="display: flex; flex-direction: column; gap: 1.5rem; height: fit-content;">
+            <div>
+                <h2 class="panel-title">Upload Subject</h2>
+                <div class="upload-area" id="drop-zone">
+                    <span class="upload-icon">📥</span>
+                    <span class="upload-text">Drag & Drop Image Here</span>
+                    <span class="upload-subtext">Supports PNG, JPG, or JPEG</span>
+                    <span style="font-size: 0.8rem; color: var(--accent-mango); font-weight: 600;">or browse local files</span>
+                    <input type="file" id="file-input" accept="image/*">
+                </div>
+                
+                <!-- Recommendation Banner -->
+                <div class="info-pill" style="margin-top: 1rem; border-color: rgba(90, 200, 255, 0.3); background: rgba(90, 200, 255, 0.05); color: #5ac8ff;">
+                    <span style="font-size: 1.1rem;">📏</span>
+                    <span><strong>Recommendation:</strong> For best accuracy, place a 6x6 5cm ArUco marker (ID 0) in view next to the mango.</span>
+                </div>
+
+                <!-- ArUco Detection Status Badge -->
+                <div id="aruco-status-container" style="display: none; margin-top: 1rem; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 8px; justify-content: center; border: 1px solid var(--card-border);">
+                    <span id="aruco-status-icon">🔍</span>
+                    <span id="aruco-status-text">Scanning for ArUco marker...</span>
+                </div>
+            </div>
+
+            <!-- Preview panel of raw uploaded image -->
+            <div id="raw-preview-container" style="display: none; border-radius: 12px; overflow: hidden; border: 1px solid var(--card-border);">
+                <img id="raw-preview" src="" alt="Uploaded Subject" style="width: 100%; display: block; object-fit: contain; background: #000; max-height: 200px;">
+            </div>
+
+            <div>
+                <h2 class="panel-title">Camera Calibration</h2>
+                <div class="controls-group">
+                    <div class="control-item">
+                        <label>Focal Lengths (fx, fy)</label>
+                        <div class="intrinsics-grid">
+                            <input type="number" id="param-fx" class="input-styled" value="2123" placeholder="fx">
+                            <input type="number" id="param-fy" class="input-styled" value="2123" placeholder="fy">
+                        </div>
+                    </div>
+                    <div class="control-item">
+                        <label>Optical Centers (cx, cy)</label>
+                        <div class="intrinsics-grid">
+                            <input type="number" id="param-cx" class="input-styled" value="1500" placeholder="cx">
+                            <input type="number" id="param-cy" class="input-styled" value="2000" placeholder="cy">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-primary" id="btn-process" disabled>
+                <span>Analyze Properties</span>
+                <span>⚡</span>
+            </button>
+
+            <div class="info-pill">
+                <span>ℹ️</span>
+                <span>This model runs Instance Segmentation (YOLOv11n) and Monocular Depth (DepthAnythingV2) to reconstruct objects in 3D metric space.</span>
+            </div>
+        </section>
+
+        <!-- Right Column: Results Dashboard -->
+        <section class="glass-card dashboard-container">
+            <!-- Empty Placeholder -->
+            <div class="empty-state" id="empty-state-view">
+                <span class="empty-state-icon">📊</span>
+                <h3>System Idle</h3>
+                <p>Upload a mango image on the left and click "Analyze Properties" to view estimations.</p>
+            </div>
+
+            <!-- Real Results (shown upon load) -->
+            <div class="results-view" id="results-view">
+                <!-- Summary Metrics (Quick Glance) -->
+                <div class="summary-cards-grid">
+                    <div class="metric-mini-card">
+                        <span class="metric-mini-label">Fruit Weight</span>
+                        <span class="metric-mini-value" id="quick-weight">--</span>
+                    </div>
+                    <div class="metric-mini-card">
+                        <span class="metric-mini-label">Maturity State</span>
+                        <span class="ripeness-badge ripeness-ripe" id="quick-ripeness">--</span>
+                    </div>
+                    <div class="metric-mini-card">
+                        <span class="metric-mini-label">Pipeline Mode</span>
+                        <span class="ripeness-badge ripeness-ripe" id="quick-pipeline" style="background: rgba(90, 200, 255, 0.15); color: #5ac8ff; border: 1px solid rgba(90, 200, 255, 0.3);">--</span>
+                    </div>
+                    <div class="metric-mini-card">
+                        <span class="metric-mini-label">Acquisition View</span>
+                        <span class="orientation-badge" id="quick-orientation">--</span>
+                    </div>
+                    <div class="metric-mini-card">
+                        <span class="metric-mini-label">Est. Distance</span>
+                        <span class="metric-mini-value" id="quick-distance">--</span>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="tab-viz">Visualizations</button>
+                    <button class="tab-btn" data-tab="tab-morphology">Detailed Morphology</button>
+                    <button class="tab-btn" data-tab="tab-packing" id="tab-btn-packing">Packing 3D</button>
+                </div>
+
+                <!-- TAB: Visualizations -->
+                <div class="tab-content active" id="tab-viz">
+                    <div class="viz-grid">
+                        <div class="viz-card">
+                            <div class="viz-header">YOLO Segmentation Mask</div>
+                            <div class="viz-image-container">
+                                <img id="img-mask" src="" alt="YOLO mask overlay">
+                            </div>
+                        </div>
+                        <div class="viz-card">
+                            <div class="viz-header">Metric Depth Map</div>
+                            <div class="viz-image-container">
+                                <img id="img-depth" src="" alt="Metric depth map">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: Detailed Morphology -->
+                <div class="tab-content" id="tab-morphology">
+                    <div class="details-grid">
+                        <!-- Mango Exterior properties -->
+                        <div>
+                            <h3 class="category-title">
+                                <span>🥭</span> Exterior Fruit Properties
+                            </h3>
+                            <div class="stats-list">
+                                <div class="stat-row">
+                                    <div class="stat-label-group">
+                                        <span class="stat-name">Height</span>
+                                        <span class="stat-desc">Est. vertical height</span>
+                                    </div>
+                                    <span class="stat-value" id="m-height">--</span>
+                                </div>
+                                <div class="stat-row">
+                                    <div class="stat-label-group">
+                                        <span class="stat-name">Width</span>
+                                        <span class="stat-desc">Est. cross-sectional width</span>
+                                    </div>
+                                    <span class="stat-value" id="m-width">--</span>
+                                </div>
+                                <div class="stat-row">
+                                    <div class="stat-label-group">
+                                        <span class="stat-name">Thickness</span>
+                                        <span class="stat-desc">Est. monocular thickness</span>
+                                    </div>
+                                    <span class="stat-value" id="m-thickness">--</span>
+                                </div>
+                                <div class="stat-row">
+                                    <div class="stat-label-group">
+                                        <span class="stat-name">Volume (Estimated)</span>
+                                        <span class="stat-desc">Reconstructed volume</span>
+                                    </div>
+                                    <span class="stat-value" id="m-volume">--</span>
+                                </div>
+                                <div class="stat-row highlight-stat-row">
+                                    <div class="stat-label-group">
+                                        <span class="stat-name" style="color: var(--accent-mango); font-weight: 700;">Bone (Seed) Percentage</span>
+                                        <span class="stat-desc">Seed portion relative to total fruit</span>
+                                    </div>
+                                    <span class="stat-value" id="bone-percentage" style="color: var(--accent-mango); font-size: 1.25rem;">--</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mango Seed properties -->
+                        <div>
+                            <h3 class="category-title category-title-seed">
+                                <span>🦴</span> Endocarp (Internal Seed)
+                            </h3>
+                            <div class="stats-list">
+                                <div class="stat-row">
+                                    <div class="stat-label-group">
+                                        <span class="stat-name">Seed Height</span>
+                                        <span class="stat-desc">Estimated seed height</span>
+                                    </div>
+                                    <span class="stat-value" id="s-height">--</span>
+                                </div>
+                                <div class="stat-row">
+                                    <div class="stat-label-group">
+                                        <span class="stat-name">Seed Width</span>
+                                        <span class="stat-desc">Estimated seed width</span>
+                                    </div>
+                                    <span class="stat-value" id="s-width">--</span>
+                                </div>
+                                <div class="stat-row">
+                                    <div class="stat-label-group">
+                                        <span class="stat-name">Seed Thickness</span>
+                                        <span class="stat-desc">Estimated seed thickness</span>
+                                    </div>
+                                    <span class="stat-value" id="s-thickness">--</span>
+                                </div>
+                                <div class="stat-row">
+                                    <div class="stat-label-group">
+                                        <span class="stat-name">Seed Volume</span>
+                                        <span class="stat-desc">Predicted seed volume space</span>
+                                    </div>
+                                    <span class="stat-value" id="s-volume">--</span>
+                                </div>
+                                <div class="stat-row">
+                                    <div class="stat-label-group">
+                                        <span class="stat-name">Seed Weight</span>
+                                        <span class="stat-desc">Predicted seed mass</span>
+                                    </div>
+                                    <span class="stat-value" id="s-weight">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: Container Packing -->
+                <div class="tab-content" id="tab-packing">
+                    <div class="packing-grid">
+                        <!-- Left Panel: Settings and Info -->
+                        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                            <div class="packing-control-card">
+                                <h3 class="category-title" style="margin-bottom: 0.5rem;">
+                                    <span>📦</span> Container Configuration
+                                </h3>
+                                
+                                <div class="packing-form-group">
+                                    <label for="container-select">Select Container Preset</label>
+                                    <select id="container-select" class="input-styled" style="font-weight: 500;">
+                                        <!-- Will be populated dynamically via API -->
+                                        <option value="box_standard">Standard Export Box (50 x 30 x 20 cm)</option>
+                                        <option value="box_small">Small Carton (40 x 30 x 15 cm)</option>
+                                        <option value="crate_wooden">Wooden Crate (60 x 40 x 30 cm)</option>
+                                        <option value="basket_small">Small Rattan Basket (D:40 cm, H:25 cm)</option>
+                                        <option value="basket_large">Large Round Basket (D:60 cm, H:35 cm)</option>
+                                        <option value="custom">Custom Container (Define Below)</option>
+                                    </select>
+                                </div>
+
+                                <!-- Custom Dimensions (only visible if custom selected) -->
+                                <div id="custom-dims-container" class="packing-form-group" style="display: none;">
+                                    <label>Dimensions (Length × Width × Height in cm)</label>
+                                    <div class="custom-dims-grid">
+                                        <input type="number" id="custom-l" class="input-styled" placeholder="Length" value="50" min="5" max="300">
+                                        <input type="number" id="custom-w" class="input-styled" placeholder="Width" value="30" min="5" max="300">
+                                        <input type="number" id="custom-h" class="input-styled" placeholder="Height" value="20" min="5" max="300">
+                                    </div>
+                                </div>
+
+                                <button id="btn-estimate-packing" class="btn-primary" style="margin-top: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                    <span>🔄</span> Calculate Packing
+                                </button>
+                            </div>
+
+                            <div class="packing-results-card">
+                                <h3 class="category-title" style="margin-bottom: 0.5rem; color: var(--accent-green);">
+                                    <span>📊</span> Estimation Summary
+                                </h3>
+                                
+                                <div class="packing-summary-stats">
+                                    <div class="packing-stat-box highlight">
+                                        <span class="packing-stat-label">Estimated Count</span>
+                                        <span class="packing-stat-value highlight" id="pack-est-count">--</span>
+                                    </div>
+                                    <div class="packing-stat-box">
+                                        <span class="packing-stat-label">Placed (3D Grid)</span>
+                                        <span class="packing-stat-value" id="pack-placed-count">--</span>
+                                    </div>
+                                    <div class="packing-stat-box">
+                                        <span class="packing-stat-label">Packing Efficiency</span>
+                                        <span class="packing-stat-value" id="pack-efficiency">--</span>
+                                    </div>
+                                    <div class="packing-stat-box">
+                                        <span class="packing-stat-label">Layers Count</span>
+                                        <span class="packing-stat-value" id="pack-layers-count">--</span>
+                                    </div>
+                                </div>
+
+                                <div class="packing-form-group" style="margin-top: 0.5rem;">
+                                    <label>Layer Breakdown (Placed)</label>
+                                    <div class="layers-breakdown" id="pack-layers-breakdown">
+                                        <div style="color: var(--text-secondary); font-size: 0.85rem; font-style: italic;">No breakdown available. Please run estimation.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Panel: 3D Visualization -->
+                        <div class="packing-3d-viewport">
+                            <div id="packing-canvas-container"></div>
+                            
+                            <!-- Interactive overlay controls -->
+                            <div class="viewport-overlay-controls">
+                                <button class="btn-icon" id="btn-reset-cam" title="Reset View">🏠</button>
+                                <button class="btn-icon" id="btn-toggle-grid" title="Toggle Grid/Floor">🌐</button>
+                                <button class="btn-icon" id="btn-toggle-wireframe" title="Toggle Container Solid/Wireframe">📦</button>
+                            </div>
+
+                            <!-- Inner loading indicator -->
+                            <div class="viewport-loading-overlay" id="viewport-loading" style="display: none;">
+                                <div class="viewport-loading-spinner"></div>
+                                <span style="font-size: 0.85rem; color: var(--text-secondary);">Calculating optimal layout...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Loading Spinner Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+        <span class="loading-text" id="loading-message">Performing 3D Mesh Reconstruction...</span>
+    </div>
+
+    <footer>
+        <p>© 2026 Monocular Depth-Assisted Morphological Properties Estimation of Mangoes. All rights reserved.</p>
+    </footer>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const btnProcess = document.getElementById('btn-process');
+        const rawPreviewContainer = document.getElementById('raw-preview-container');
+        const rawPreview = document.getElementById('raw-preview');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const loadingMessage = document.getElementById('loading-message');
+        const emptyStateView = document.getElementById('empty-state-view');
+        const resultsView = document.getElementById('results-view');
+        const arucoStatusContainer = document.getElementById('aruco-status-container');
+        const arucoStatusIcon = document.getElementById('aruco-status-icon');
+        const arucoStatusText = document.getElementById('aruco-status-text');
+        
+        let selectedFile = null;
+
+        // Global variables for container packing
+        let currentMangoDims = null;
+        let presetsCache = null;
+        let threeScene = null;
+        let threeCamera = null;
+        let threeRenderer = null;
+        let threeControls = null;
+        let threeContainerGroup = null;
+        let threeMangoesGroup = null;
+        let threeGridHelper = null;
+        let containerWireframeMode = true; // default wireframe mode
+
+        // Tab selection logic
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.getAttribute('data-tab');
+                
+                tabButtons.forEach(b => b.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                btn.classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+
+                if (tabId === 'tab-packing') {
+                    onPackingTabVisible();
+                }
+            });
+        });
+
+        // Initialize container presets on script load
+        fetchContainerPresets();
+        setupPackingListeners();
+
+        // Click on upload area triggers file selector
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        // Drag & Drop behaviors
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                handleFileSelect(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                handleFileSelect(fileInput.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Please upload an image file (PNG, JPG, or JPEG).');
+                return;
+            }
+            selectedFile = file;
+            btnProcess.disabled = false;
+            
+            // Render local image preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                rawPreview.src = e.target.result;
+                rawPreviewContainer.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+
+            // Call lightweight /detect-aruco endpoint for live feedback
+            checkArUco(file);
+        }
+
+        async function checkArUco(file) {
+            arucoStatusContainer.style.display = 'flex';
+            arucoStatusContainer.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+            arucoStatusContainer.style.background = 'rgba(255, 255, 255, 0.02)';
+            arucoStatusIcon.innerText = '🔍';
+            arucoStatusText.innerText = 'Scanning for ArUco marker...';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/detect-aruco', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!response.ok) throw new Error('ArUco detection failed');
+                const data = await response.json();
+                
+                if (data.aruco_detected) {
+                    arucoStatusContainer.style.borderColor = 'rgba(46, 196, 182, 0.3)';
+                    arucoStatusContainer.style.background = 'rgba(46, 196, 182, 0.05)';
+                    arucoStatusIcon.innerText = '✅';
+                    arucoStatusText.innerText = 'ArUco Marker Detected — Using calibrated pipeline';
+                    arucoStatusText.style.color = '#2ec4b6';
+                } else {
+                    arucoStatusContainer.style.borderColor = 'rgba(255, 159, 28, 0.3)';
+                    arucoStatusContainer.style.background = 'rgba(255, 159, 28, 0.05)';
+                    arucoStatusIcon.innerText = '⚠️';
+                    arucoStatusText.innerText = 'No ArUco marker — Using uncalibrated pipeline';
+                    arucoStatusText.style.color = '#ff9f1c';
+                }
+            } catch (err) {
+                console.error(err);
+                arucoStatusContainer.style.borderColor = 'rgba(255, 51, 102, 0.3)';
+                arucoStatusContainer.style.background = 'rgba(255, 51, 102, 0.05)';
+                arucoStatusIcon.innerText = '❌';
+                arucoStatusText.innerText = 'Error detecting ArUco marker';
+                arucoStatusText.style.color = '#ff3366';
+            }
+        }
+
+        // Action when pressing "Analyze Properties"
+        btnProcess.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            // Show loader with rolling messages to keep UX lively
+            loadingOverlay.style.display = 'flex';
+            const messages = [
+                "Running YOLOv11n Instance Segmentation...",
+                "Running DepthAnythingV2 Metric Map...",
+                "Estimating 3D point cloud and Convex Hull...",
+                "Classifying Acquisition View Alignment...",
+                "Executing Layer 1 external predictions...",
+                "Executing Layer 2 seed morphology mapping..."
+            ];
+            
+            let msgIdx = 0;
+            loadingMessage.innerText = messages[msgIdx];
+            const messageInterval = setInterval(() => {
+                msgIdx = (msgIdx + 1) % messages.length;
+                loadingMessage.innerText = messages[msgIdx];
+            }, 1800);
+
+            // Build request
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('fx', document.getElementById('param-fx').value);
+            formData.append('fy', document.getElementById('param-fy').value);
+            formData.append('cx', document.getElementById('param-cx').value);
+            formData.append('cy', document.getElementById('param-cy').value);
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                clearInterval(messageInterval);
+                loadingOverlay.style.display = 'none';
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    alert(`Inference failed: ${err.detail || 'Unknown server error'}`);
+                    return;
+                }
+
+                const data = await response.json();
+                renderResults(data);
+
+            } catch (error) {
+                clearInterval(messageInterval);
+                loadingOverlay.style.display = 'none';
+                console.error(error);
+                alert('Failed to connect to FastAPI backend server. Ensure uvicorn is running.');
+            }
+        });
+
+        function renderResults(data) {
+            emptyStateView.style.display = 'none';
+            resultsView.style.display = 'block';
+
+            const preds = data.predictions;
+            const viz = data.visualizations;
+
+            // Summary metrics
+            document.getElementById('quick-weight').innerText = `${preds.mango.weight_g.toFixed(1)} g`;
+            
+            const ripBadge = document.getElementById('quick-ripeness');
+            ripBadge.innerText = preds.is_ripe;
+            if (preds.is_ripe.toLowerCase() === 'ripe') {
+                ripBadge.className = 'ripeness-badge ripeness-ripe';
+            } else {
+                ripBadge.className = 'ripeness-badge ripeness-unripe';
+            }
+
+            const pipelineBadge = document.getElementById('quick-pipeline');
+            if (data.aruco_detected) {
+                pipelineBadge.innerText = 'ArUco Calibrated';
+                pipelineBadge.style.color = '#2ec4b6';
+                pipelineBadge.style.background = 'rgba(46, 196, 182, 0.15)';
+                pipelineBadge.style.borderColor = 'rgba(46, 196, 182, 0.3)';
+            } else {
+                pipelineBadge.innerText = 'Monocular Only';
+                pipelineBadge.style.color = '#ff9f1c';
+                pipelineBadge.style.background = 'rgba(255, 159, 28, 0.15)';
+                pipelineBadge.style.borderColor = 'rgba(255, 159, 28, 0.3)';
+            }
+
+            document.getElementById('quick-orientation').innerText = preds.orientation;
+            document.getElementById('quick-distance').innerText = `${preds.distance_z_m.toFixed(3)} m`;
+
+            // Visualizations
+            document.getElementById('img-mask').src = viz.mask;
+            document.getElementById('img-depth').src = viz.depth;
+
+            // Detailed Mango stats
+            document.getElementById('m-height').innerText = `${preds.mango.height_cm.toFixed(2)} cm`;
+            document.getElementById('m-width').innerText = `${preds.mango.width_cm.toFixed(2)} cm`;
+            document.getElementById('m-thickness').innerText = `${preds.mango.thickness_cm.toFixed(2)} cm`;
+            document.getElementById('m-volume').innerText = `${preds.mango.volume_cm3.toFixed(1)} cm³`;
+            
+            const mVol = preds.mango.volume_cm3;
+            const sVol = preds.seed.volume_cm3;
+            const mWt = preds.mango.weight_g;
+            const sWt = preds.seed.weight_g;
+            const volPct = mVol > 0 ? (sVol / mVol) * 100 : 0;
+            const wtPct = mWt > 0 ? (sWt / mWt) * 100 : 0;
+            document.getElementById('bone-percentage').innerText = `${volPct.toFixed(1)}% (Vol) / ${wtPct.toFixed(1)}% (Wt)`;
+
+            // Detailed Seed stats
+            document.getElementById('s-height').innerText = `${preds.seed.height_cm.toFixed(2)} cm`;
+            document.getElementById('s-width').innerText = `${preds.seed.width_cm.toFixed(2)} cm`;
+            document.getElementById('s-thickness').innerText = `${preds.seed.thickness_cm.toFixed(2)} cm`;
+            document.getElementById('s-volume').innerText = `${preds.seed.volume_cm3.toFixed(1)} cm³`;
+            document.getElementById('s-weight').innerText = `${preds.seed.weight_g.toFixed(1)} g`;
+            
+            // Save current mango dimensions for container packing
+            currentMangoDims = {
+                height_cm: preds.mango.height_cm,
+                width_cm: preds.mango.width_cm,
+                thickness_cm: preds.mango.thickness_cm
+            };
+
+            // Trigger container packing calculation
+            calculatePacking();
+
+            // Scroll to results on mobile viewports
+            resultsView.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // ---------------------------------------------------------------------------
+        // Container Packing & 3D Visualization JS Functions
+        // ---------------------------------------------------------------------------
+
+        async function fetchContainerPresets() {
+            try {
+                const response = await fetch('/containers');
+                if (!response.ok) throw new Error('Failed to load container presets');
+                presetsCache = await response.json();
+                
+                // Populate dropdown
+                const select = document.getElementById('container-select');
+                if (select) {
+                    select.innerHTML = '';
+                    for (const [id, preset] of Object.entries(presetsCache)) {
+                        const opt = document.createElement('option');
+                        opt.value = id;
+                        let label = preset.label;
+                        if (id !== 'custom') {
+                            if (preset.shape === 'cylinder') {
+                                label += ` (D:${preset.l_cm} x H:${preset.h_cm} cm)`;
+                            } else {
+                                label += ` (${preset.l_cm} x ${preset.w_cm} x ${preset.h_cm} cm)`;
+                            }
+                        }
+                        opt.textContent = label;
+                        select.appendChild(opt);
+                    }
+                    // Select first preset by default
+                    select.value = 'box_standard';
+                }
+            } catch (err) {
+                console.error('Error fetching container presets:', err);
+            }
+        }
+
+        function setupPackingListeners() {
+            const select = document.getElementById('container-select');
+            const btnEstimate = document.getElementById('btn-estimate-packing');
+            const customL = document.getElementById('custom-l');
+            const customW = document.getElementById('custom-w');
+            const customH = document.getElementById('custom-h');
+
+            if (select) {
+                select.addEventListener('change', (e) => {
+                    const val = e.target.value;
+                    const customDims = document.getElementById('custom-dims-container');
+                    
+                    if (val === 'custom') {
+                        if (customDims) customDims.style.display = 'block';
+                    } else {
+                        if (customDims) customDims.style.display = 'none';
+                        if (presetsCache && presetsCache[val]) {
+                            const preset = presetsCache[val];
+                            if (customL) customL.value = preset.l_cm;
+                            if (customW) customW.value = preset.w_cm;
+                            if (customH) customH.value = preset.h_cm;
+                        }
+                    }
+                    if (currentMangoDims) {
+                        calculatePacking();
+                    }
+                });
+            }
+
+            if (btnEstimate) {
+                btnEstimate.addEventListener('click', calculatePacking);
+            }
+
+            [customL, customW, customH].forEach(input => {
+                if (input) {
+                    input.addEventListener('change', () => {
+                        const select = document.getElementById('container-select');
+                        if (currentMangoDims && select && select.value === 'custom') {
+                            calculatePacking();
+                        }
+                    });
+                }
+            });
+
+            // 3D viewport overlay buttons
+            const btnResetCam = document.getElementById('btn-reset-cam');
+            if (btnResetCam) {
+                btnResetCam.addEventListener('click', () => {
+                    if (threeCamera && threeControls) {
+                        const select = document.getElementById('container-select');
+                        let l = 50, w = 30, h = 20;
+                        if (select && presetsCache && presetsCache[select.value] && select.value !== 'custom') {
+                            const p = presetsCache[select.value];
+                            l = p.l_cm;
+                            w = p.w_cm;
+                            h = p.h_cm;
+                        } else {
+                            l = parseFloat(customL.value) || 50;
+                            w = parseFloat(customW.value) || 30;
+                            h = parseFloat(customH.value) || 20;
+                        }
+                        const maxDim = Math.max(l, w, h);
+                        threeCamera.position.set(maxDim * 1.2, maxDim * 1.2, maxDim * 1.5);
+                        threeControls.target.set(0, 0, 0);
+                        threeControls.update();
+                    }
+                });
+            }
+
+            const btnToggleGrid = document.getElementById('btn-toggle-grid');
+            if (btnToggleGrid) {
+                btnToggleGrid.addEventListener('click', () => {
+                    if (threeGridHelper) {
+                        threeGridHelper.visible = !threeGridHelper.visible;
+                    }
+                });
+            }
+
+            const btnToggleWireframe = document.getElementById('btn-toggle-wireframe');
+            if (btnToggleWireframe) {
+                btnToggleWireframe.addEventListener('click', () => {
+                    containerWireframeMode = !containerWireframeMode;
+                    if (threeContainerGroup) {
+                        threeContainerGroup.children.forEach(child => {
+                            if (child.isMesh) {
+                                child.visible = !containerWireframeMode;
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        async function calculatePacking() {
+            if (!currentMangoDims) {
+                alert('Please upload and analyze a mango photo first to get dimensions.');
+                return;
+            }
+            
+            const loader = document.getElementById('viewport-loading');
+            if (loader) loader.style.display = 'flex';
+            
+            const containerId = document.getElementById('container-select').value;
+            const customL = parseFloat(document.getElementById('custom-l').value) || null;
+            const customW = parseFloat(document.getElementById('custom-w').value) || null;
+            const customH = parseFloat(document.getElementById('custom-h').value) || null;
+            
+            const payload = {
+                mango_h: currentMangoDims.height_cm,
+                mango_w: currentMangoDims.width_cm,
+                mango_t: currentMangoDims.thickness_cm,
+                container_id: containerId,
+                custom_l: containerId === 'custom' ? customL : null,
+                custom_w: containerId === 'custom' ? customW : null,
+                custom_h: containerId === 'custom' ? customH : null
+            };
+            
+            try {
+                const response = await fetch('/count-in-container', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || 'Failed to calculate packing');
+                }
+                
+                const data = await response.json();
+                
+                // Update UI text fields
+                document.getElementById('pack-est-count').innerText = data.count_estimate;
+                document.getElementById('pack-placed-count').innerText = data.count_placed;
+                document.getElementById('pack-efficiency').innerText = `${data.packing_efficiency_pct}%`;
+                document.getElementById('pack-layers-count').innerText = data.layers;
+                
+                // Update layer breakdown
+                const breakdownContainer = document.getElementById('pack-layers-breakdown');
+                if (breakdownContainer) {
+                    breakdownContainer.innerHTML = '';
+                    if (data.per_layer && data.per_layer.length > 0) {
+                        data.per_layer.forEach((count, idx) => {
+                            const item = document.createElement('div');
+                            item.className = 'layer-item';
+                            item.innerHTML = `
+                                <span>Layer ${idx + 1}</span>
+                                <span class="layer-badge">${count} mangoes</span>
+                            `;
+                            breakdownContainer.appendChild(item);
+                        });
+                    } else {
+                        breakdownContainer.innerHTML = `<div style="color: var(--text-secondary); font-size: 0.85rem; font-style: italic;">No layers placed.</div>`;
+                    }
+                }
+                
+                // Rerender Three.js scene
+                update3DScene(data);
+                
+            } catch (err) {
+                console.error(err);
+                alert(`Error calculating packing: ${err.message}`);
+            } finally {
+                if (loader) loader.style.display = 'none';
+            }
+        }
+
+        function initThreeJS() {
+            const container = document.getElementById('packing-canvas-container');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            const width = container.clientWidth || 500;
+            const height = container.clientHeight || 550;
+            
+            // Scene
+            threeScene = new THREE.Scene();
+            threeScene.background = new THREE.Color(0x08090c);
+            
+            // Camera
+            threeCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+            threeCamera.position.set(60, 60, 80);
+            
+            // Renderer
+            threeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            threeRenderer.setSize(width, height);
+            threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            threeRenderer.shadowMap.enabled = true;
+            container.appendChild(threeRenderer.domElement);
+            
+            // Controls
+            threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
+            threeControls.enableDamping = true;
+            threeControls.dampingFactor = 0.05;
+            threeControls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below floor
+            threeControls.minDistance = 20;
+            threeControls.maxDistance = 300;
+            
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+            threeScene.add(ambientLight);
+            
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.65);
+            dirLight.position.set(80, 100, 50);
+            dirLight.castShadow = true;
+            threeScene.add(dirLight);
+            
+            const pointLight = new THREE.PointLight(0xff9f1c, 0.35, 200);
+            pointLight.position.set(-60, 60, -60);
+            threeScene.add(pointLight);
+            
+            // Groups
+            threeContainerGroup = new THREE.Group();
+            threeMangoesGroup = new THREE.Group();
+            threeScene.add(threeContainerGroup);
+            threeScene.add(threeMangoesGroup);
+            
+            // Add grid helper (initially visible)
+            threeGridHelper = new THREE.GridHelper(200, 50, 0x444444, 0x222222);
+            threeGridHelper.position.y = -25;
+            threeScene.add(threeGridHelper);
+            
+            // Animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+                if (threeControls) threeControls.update();
+                if (threeRenderer && threeScene && threeCamera) {
+                    threeRenderer.render(threeScene, threeCamera);
+                }
+            }
+            animate();
+            
+            // Window resize handler
+            window.addEventListener('resize', () => {
+                if (threeCamera && threeRenderer && container) {
+                    const w = container.clientWidth;
+                    const h = container.clientHeight;
+                    if (w && h) {
+                        threeCamera.aspect = w / h;
+                        threeCamera.updateProjectionMatrix();
+                        threeRenderer.setSize(w, h);
+                    }
+                }
+            });
+        }
+
+        function update3DScene(data) {
+            if (!threeScene) {
+                initThreeJS();
+            }
+            
+            // Clear current container and mangoes meshes
+            while(threeContainerGroup.children.length > 0) {
+                const obj = threeContainerGroup.children[0];
+                threeContainerGroup.remove(obj);
+            }
+            while(threeMangoesGroup.children.length > 0) {
+                const obj = threeMangoesGroup.children[0];
+                threeMangoesGroup.remove(obj);
+            }
+            
+            const cont = data.container;
+            const l_cm = cont.l_cm;
+            const w_cm = cont.w_cm;
+            const h_cm = cont.h_cm;
+            const shape = cont.shape;
+            
+            // Draw Container
+            let geom;
+            if (shape === 'cylinder') {
+                const r = l_cm / 2;
+                geom = new THREE.CylinderGeometry(r, r, h_cm, 32, 1, true);
+            } else {
+                geom = new THREE.BoxGeometry(l_cm, h_cm, w_cm);
+            }
+            
+            // Solid transparent walls
+            const solidMat = new THREE.MeshPhongMaterial({
+                color: 0x1e2230,
+                transparent: true,
+                opacity: 0.15,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+            const containerMesh = new THREE.Mesh(geom, solidMat);
+            containerMesh.visible = !containerWireframeMode;
+            threeContainerGroup.add(containerMesh);
+            
+            // Glowing edges outline
+            const edges = new THREE.EdgesGeometry(geom);
+            const lineMat = new THREE.LineBasicMaterial({
+                color: 0x2ec4b6, // neon cyan
+                linewidth: 2
+            });
+            const lineSegments = new THREE.LineSegments(edges, lineMat);
+            threeContainerGroup.add(lineSegments);
+            
+            // Update floor grid position
+            if (threeGridHelper) {
+                threeGridHelper.position.y = -h_cm / 2 - 0.1;
+            }
+            
+            // Draw Mangoes
+            const positions = data.positions || [];
+            
+            // Create a shared geometry for performance
+            const mangoGeom = new THREE.SphereGeometry(1, 16, 16);
+            
+            // Organic mango shades
+            const mangoColors = [
+                0xff9f1c, // accent orange
+                0xffb703, // bright yellow
+                0xfd9e02, // orange-yellow
+                0xe07a5f, // terracotta pinkish orange
+                0xa7c957, // soft green
+            ];
+            
+            positions.forEach((pos, idx) => {
+                const color = mangoColors[idx % mangoColors.length];
+                const mangoMat = new THREE.MeshPhongMaterial({
+                    color: color,
+                    shininess: 50,
+                    specular: 0x111111,
+                });
+                
+                const mesh = new THREE.Mesh(mangoGeom, mangoMat);
+                // Scaling: rx = length radius (maps to X), rz = thickness radius (maps to Y), ry = width radius (maps to Z)
+                mesh.scale.set(pos.rx, pos.rz, pos.ry);
+                
+                // Position: x maps to X, z maps to Y, y maps to Z
+                mesh.position.set(pos.x, pos.z, pos.y);
+                
+                // Subtle natural rotation around Z/Y/X for realism
+                mesh.rotation.x = ((idx * 7) % 10) / 100 - 0.05;
+                mesh.rotation.y = ((idx * 13) % 10) / 100 - 0.05;
+                mesh.rotation.z = ((idx * 3) % 20) / 100 - 0.1;
+                
+                threeMangoesGroup.add(mesh);
+            });
+            
+            // Adjust camera view
+            const maxDim = Math.max(l_cm, w_cm, h_cm);
+            threeCamera.position.set(maxDim * 1.2, maxDim * 1.2, maxDim * 1.5);
+            threeControls.target.set(0, 0, 0);
+            threeControls.update();
+        }
+
+        function onPackingTabVisible() {
+            if (!threeScene) {
+                initThreeJS();
+                if (currentMangoDims) {
+                    calculatePacking();
+                }
+            } else {
+                // Resize WebGL canvas to fit container
+                const container = document.getElementById('packing-canvas-container');
+                if (container && threeRenderer && threeCamera && threeControls) {
+                    const w = container.clientWidth;
+                    const h = container.clientHeight;
+                    if (w && h) {
+                        threeCamera.aspect = w / h;
+                        threeCamera.updateProjectionMatrix();
+                        threeRenderer.setSize(w, h);
+                        threeControls.update();
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
+

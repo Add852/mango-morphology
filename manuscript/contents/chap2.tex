@@ -1,0 +1,83 @@
+\section{Review of Related Literature}
+
+\subsection{Economic Impact and Post-Harvest Processing of Mangoes}
+Mangoes represent a vital component of the global agricultural trade, and their
+economic impact in the Philippines is profound \cite{fernandez2017mango}. Proper
+post-harvest processing and quality assessment are essential for maintaining this
+economic value. Typically, mangoes are graded and sorted based on their size,
+weight, and morphological attributes \cite{Villaruz2025AVA}. In traditional
+agricultural settings, this is done manually, which is not only time-consuming
+but also subjective and prone to inconsistencies \cite{amdpwe2023}. While physical
+weighing scales and volume measurement techniques (such as water displacement)
+are accurate, they are slow and occasionally destructive. The development of
+automatic visual inspection systems is thus a highly sought-after intervention to
+ensure consistency in size across fruit batches and to meet strict market demands.
+
+\subsection{Properties of the Indian Mango (Katchamitha)}
+The Indian mango, locally known as Katchamitha \cite{Katchamitha2025}, is the fourth
+most produced mango variant in the Philippines. It accounts for a production volume
+of 26,268 metric tons, occupying approximately 3.4\% of the total 763,298 metric
+tons of national mango volume projected for 2025 \cite{mangoPhilippineOpenStats}.
+Despite its popularity as a locally consumed fruit, it presents unique challenges
+for automated grading. Katchamitha mangoes exhibit a deceptively green skin even
+upon reaching full physiological maturity, sometimes only displaying a faint
+yellow blush \cite{Katchamitha20252}. Consequently, ripeness cannot be reliably
+determined through conventional RGB color analysis alone. However, as mangoes
+ripen, their internal chemical composition changes, which directly influences
+their density \cite{fruitDensity}. Thus, estimating the density and volume
+accurately provides a more reliable indicator of the fruit's sensory quality and
+ripeness phase.
+
+\subsection{Vision-Based Morphological Estimation}
+To automate fruit grading, various vision-based techniques have been proposed. 
+Sa'ad \textit{et al.} \cite{shape2015mango} utilized visible imaging combined
+with a Fourier-descriptor method to classify mango shapes with high accuracy. 
+They further estimated the weight of mangoes by approximating the fruit as a
+cylinder, achieving a 94.0\% correlation ($R^2$) between estimated and actual
+weights using the equation $w = 2.256V - 157.7$. Similarly, Mon and Aung
+\cite{volume2020mango} proposed an image processing algorithm to reconstruct the
+3D shape of a mango from a 2D top-view image by analyzing light intensity
+distribution to estimate thickness, achieving a volume estimation accuracy of
+96.8\%. Aung \textit{et al.} \cite{japan2020mango} also demonstrated weight
+estimation from single visible fruit surfaces.
+
+While these 2D-based methods represent significant progress \cite{sweetpotato2022},
+they inherently rely on mathematical assumptions about the fruit's symmetry (e.g.,cylindrical or ellipsoidal approximation), which can fail to capture the complex,
+asymmetric morphology of actual mangoes.
+
+\subsection{Monocular Depth Estimation and Instance Segmentation}
+Recent advancements in deep learning have introduced Monocular Depth Estimation
+(MDE) as a powerful tool to bridge the gap between 2D imaging and 3D perception.
+MDE predicts a depth map from a single RGB image, offering a low-cost and highly
+adaptable alternative to expensive hardware like LiDAR or stereo cameras
+\cite{depthanythingv2}. 
+
+For instance, Shang \textit{et al.} \cite{depthcl} highlighted the difficulty
+of green-to-green instance segmentation---a common issue when green fruits blend
+with the canopy. To address this, they proposed DepthCL-Seg, a framework that
+fused RGB and monocular depth data. Their approach demonstrated that
+incorporating depth information significantly enhanced the feature representation
+of low-contrast target regions, surpassing classical methods like Mask R-CNN.
+State-of-the-art MDE models, such as Depth Anything V2 \cite{depth_anything_v2},
+provide robust, high-resolution depth maps that can be effectively utilized to
+refine bounding boxes and segmentation masks.
+
+However, a fundamental limitation of monocular depth estimation models is their
+scale ambiguity: they predict relative depth or scale-variant metric outputs that
+fluctuate under different distances, camera zooms, or lighting setups
+\cite{depthanythingv2}. To convert these relative depth maps into absolute
+physical measurements (e.g., in centimeters or grams), researchers often employ
+fiducial markers. Fiducial markers, such as ArUco markers, provide a known
+geometric reference in the scene. By detecting the ArUco marker's pixel
+dimensions and comparing them with its known physical dimensions, a scaling
+factor can be computed to calibrate the depth map and reconstruct accurate 3D
+point clouds. 
+
+This study builds upon these findings by proposing two architectures that pair
+the cutting-edge YOLOv11 instance segmentation with Depth Anything V2: one
+uncalibrated, which leverages scale-invariant ratios to infer morphological
+features, and one calibrated, which integrates an ArUco marker to resolve scale
+ambiguity. By combining RGB color space with calibrated 3D depth data, the
+proposed framework captures the true curvature and thickness of the Katchamitha
+mango, moving beyond simple 2D assumptions to accurately estimate weight,
+density, and internal stone-to-flesh ratios.

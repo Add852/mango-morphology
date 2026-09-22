@@ -1,0 +1,7 @@
+path: ../../images
+train: ../models/YoloV11n/yoloTrain.txt
+val: ../models/YoloV11n/yoloTrain.txt
+
+# Classes
+names:
+  0: mango

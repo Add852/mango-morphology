@@ -1,0 +1,37 @@
+# --- Python ---
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# --- Caches & lock files ---
+*.cache
+.~lock.*#
+
+# --- Model weights: public/re-downloadable checkpoints, see README ---
+models/DepthAnythingV2/*.pth
+models/YoloV11n/yolo11n-seg.pt
+models/YoloV11n/*.zip
+
+# Old YOLO training runs; only the final production weights are kept
+models/YoloV11n/runs/*
+!models/YoloV11n/runs/segment/
+models/YoloV11n/runs/segment/*
+!models/YoloV11n/runs/segment/mango_seg_v1-4/
+models/YoloV11n/runs/segment/mango_seg_v1-4/*
+!models/YoloV11n/runs/segment/mango_seg_v1-4/weights/
+models/YoloV11n/runs/segment/mango_seg_v1-4/weights/*
+!models/YoloV11n/runs/segment/mango_seg_v1-4/weights/best.pt
+
+# --- Dataset images: hosted on Zenodo, see README ---
+images/
+
+# --- LaTeX build artifacts ---
+manuscript/*.aux
+manuscript/*.bbl
+manuscript/*.blg
+manuscript/*.fdb_latexmk
+manuscript/*.fls
+manuscript/*.log
+manuscript/*.out
+manuscript/*.synctex.gz
+manuscript/LaTeX Files.zip

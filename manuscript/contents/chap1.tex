@@ -1,0 +1,86 @@
+\section{Introduction}
+
+Mangoes hold immense economic and cultural importance in the Philippines, serving
+not only as the national fruit but also as a cornerstone of the agricultural sector.
+As the third most essential fruit crop in the country, mango production reached an
+estimated 596.34 thousand metric tons between April and June 2023, covering a
+planted area of 184.03 thousand hectares \cite{philippineMangoIndustry}. To maintain
+global competitiveness and ensure high-quality produce, strict quality assessment
+and sorting mechanisms are required during post-harvest processing. These
+processes traditionally depend on manual sorting based on weight, size, and ripeness,
+which are highly laborious, time-consuming, and prone to human error. Developing a
+non-destructive and efficient method for estimating the weight, volume, and other
+morphological properties of mangoes before harvesting or during processing is
+critical to improving agricultural efficiency and yield estimation.
+
+\subsection{Problem Statement}
+One of the primary challenges in the automated visual inspection of green fruits is
+green-to-green segmentation---the difficulty of distinguishing the green fruit from
+similarly colored leaves and branches in the background \cite{depthcl}. This issue is
+particularly pronounced in the Indian mango (\textit{Katchamitha}) \cite{Katchamitha2025},
+which often retains a deceptively green skin even when fully ripe, occasionally
+showing only a slight yellow blush \cite{Katchamitha20252}. Consequently, relying
+solely on traditional RGB color space for segmentation and ripeness estimation is
+unreliable. 
+
+Furthermore, yield estimation and quality grading are hindered by the lack of non-
+destructive measurement techniques. For instance, determining the weight or the
+stone-to-flesh ratio of a mango typically requires destructive interference or
+physical harvesting. Existing vision-based weight estimation models for mangoes
+largely rely on 2D images \cite{volume2020mango, shape2015mango}, which inherently
+neglect the actual 3D shape and partial depth of the fruit, leading to inaccuracies.
+Research specifically addressing non-destructive stone-to-flesh ratio estimation
+remains notably scarce.
+
+\subsection{Objectives}
+This study aims to develop a comprehensive, dual-pipeline framework for the non-destructive estimation of the morphological properties of Katchamitha mangoes. Specifically, the study seeks to:
+\begin{enumerate}
+    \item Utilize Monocular Depth Estimation (MDE), specifically the metric version of
+    Depth Anything V2 \cite{depth_anything_v2}, to assist and refine the RGB instance
+    segmentation performed by YOLOv11n (RGB + Depth Fusion).
+    \item Implement and compare two processing architectures: (a) an uncalibrated
+    pipeline relying on raw depth features and scale-invariant ratios, and (b) a
+    calibrated pipeline using ArUco reference markers to translate pixel depth maps
+    into physical dimensions.
+    \item Extract robust geometric and color features from the fused RGB-Depth data
+    to train an orientation classification model, recognizing that varying viewing
+    angles require dedicated morphology and ripeness estimation pipelines.
+    \item Train a multiple multi-output Random Forest regression model that
+    estimates the mango's morphological properties based on the RGB-Depth
+    information, the classified orientation, and the ripening phase. The
+    properties to be estimated include:
+    \begin{itemize}
+        \item Dimensions (Height, Width, and Thickness), Volume, Weight, and Density of the mango.
+        \item Dimensions, Volume, Weight, and Density of the mango's bone (stone).
+        \item The ripening phase of the mango (ripe vs. unripe).
+        \item The stone-to-flesh ratio of the mango.
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Significance of the Study}
+The integration of MDE into a computer vision pipeline provides a low-cost,
+adaptable alternative to expensive 3D scanning or LiDAR systems for automated
+agriculture \cite{depthanythingv2}. By precisely estimating internal and external
+properties without physically harming the fruit, this research contributes to
+sustainable precision agriculture, minimizes post-harvest waste, and supports
+local farmers in maximizing the market value of their yield.
+
+\subsection{Scope and Limitations}
+The dataset is limited to 45 Katchamitha mango samples gathered from the local
+region of Mabalacat City, Pampanga. These 45 samples yield a total of 243 raw
+images across six orientations, expanded to 640 images after data augmentation.
+The dataset is split into two groups: 35 samples (482 augmented images) are used
+for the uncalibrated pipeline, and 10 samples (158 augmented images) are equipped
+with ArUco reference markers for the calibrated pipeline. The Katchamitha variant
+was selected primarily for its local accessibility and cost-efficiency; however,
+the proposed methodology is designed to be easily replicated for more commercially
+dominant variants like the Carabao mango \cite{fernandez2017mango}.
+
+Additionally, the metric version of MDE models can yield inconsistent absolute depth
+values for the same object under varying lighting conditions or camera distances.
+To mitigate this in the uncalibrated pipeline, the study relies on scale-invariant
+depth ratios rather than raw depth maps, while the calibrated pipeline utilizes
+the ArUco marker as a physical reference to establish an absolute scale factor.
+Finally, the proposed system processes a single, unoccluded mango instance at a
+time and is not yet trained to handle occluded environments in complex orchard
+canopies.

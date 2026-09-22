@@ -1,0 +1,66 @@
+\section{Conclusions and Recommendations}
+
+\subsection{Conclusions}
+This study successfully developed and evaluated a monocular depth-assisted vision
+framework for the non-destructive estimation of the external and internal morphological
+properties of Katchamitha (Indian) mangoes in the Philippines. The framework integrated
+YOLOv11n instance segmentation with Depth Anything V2 metric depth maps to address the
+green-to-green camouflage problem, extracting robust 3D shape and color features from
+multi-view images.
+
+Our comparative evaluation of two processing architectures yielded several critical insights:
+\begin{enumerate}
+    \item \textbf{Instance Segmentation Frontend:} The custom-trained YOLOv11n-seg model
+    achieved near-perfect segmentation accuracy (box and mask precision of \textbf{99.9\%},
+    recall of \textbf{100.0\%}, and mAP50 score of \textbf{99.5\%}), establishing a robust boundary
+    extraction foundation that isolates the fruit from background noise prior to downstream pose
+    classification and property estimation.
+    \item \textbf{Monocular Scale Ambiguity:} The uncalibrated (No ArUco) pipeline, while
+    achieving a robust orientation classification accuracy of \textbf{97.32\%} via the unified
+    MobileNetV3-Small CNN classifier and reasonable ripeness classification, failed to
+    estimate absolute physical properties (dimensions, volume, and weight). The resulting negative
+    or near-zero $R^2$ scores demonstrate that raw monocular depth map features are scale-ambiguous
+    and highly sensitive to varying camera distances and lighting, rendering them unsuitable for
+    direct physical size estimation without calibration.
+    \item \textbf{Fiducial Marker Calibration:} The calibrated (ArUco) pipeline successfully
+    resolved the scale ambiguity by using a physical fiducial reference marker to establish an absolute
+    scale factor ($S_{\text{aruco}}$). This enabled the conversion of depth coordinates to real-world
+    metric values. The calibrated pipeline achieved high morphological estimation accuracy, with
+    volumetric $R^2$ scores reaching \textbf{0.83--0.87} and gravimetric $R^2$ scores reaching
+    \textbf{0.78--0.86} across different viewpoints, with mass prediction errors kept below
+    \textbf{22.8 grams}.
+    \item \textbf{Allometric Biological Scaling:} The Layer 2 internal seed regressor achieved
+    excellent performance in both configurations ($R^2 = 0.84 - 0.94$). This confirms that the internal
+    endocarp's volume and weight scale predictably with the overall size and mass of the external
+    fruit, allowing for the non-destructive estimation of the internal stone-to-flesh ratio based on
+    external dimensions.
+\end{enumerate}
+
+In conclusion, the replacement of the previous feature-based Random Forest orientation
+classifiers with a single fine-tuned MobileNetV3-Small CNN improved orientation accuracy
+from 75.38\% to \textbf{97.32\%}, demonstrating the value of image-based deep learning
+for orientation routing. Furthermore, while monocular depth maps are highly useful for
+capturing 3D contours and shape features, absolute metric calibration using a known
+physical reference is essential to achieve acceptable accuracy for agricultural sorting and
+grading tasks.
+
+\subsection{Recommendations}
+Based on the findings of this study, the following recommendations are proposed for future research:
+\begin{enumerate}
+    \item \textbf{Dataset Expansion and Generalization:} The calibrated pipeline's high
+    performance (such as the 100\% ripeness classification accuracy) is constrained by a small
+    sample size (10 mangoes with ArUco markers). Future work should expand the calibrated
+    dataset to include hundreds of samples. This will provide a more rigorous test support to prevent
+    overfitting and confirm the models' generalizability.
+    \item \textbf{Reference-Free Metric Scale Estimation:} While the ArUco marker is effective,
+    placing a physical marker in the camera's field of view is impractical in automated orchard
+    environments. Future research should investigate reference-free depth scaling techniques. This
+    includes utilizing smartphone hardware sensors (e.g., dual-camera stereo matching or Time-of-Flight
+    LiDAR sensors) or developing deep-learning models trained to infer scale from known agricultural
+    features (such as leaf size or trunk thickness).
+    \item \textbf{Multi-Variety Validation:} The present study was restricted to Katchamitha
+    mangoes. Replicating the dual-pipeline framework on other commercially critical Philippine mango
+    varieties, such as the Carabao mango (the country's primary export crop) or the Pico mango,
+    will validate the adaptability of the system and support its commercial adoption in precision
+    agriculture.
+\end{enumerate}
