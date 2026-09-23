@@ -22,7 +22,7 @@ models/YoloV11n/runs/segment/mango_seg_v1-4/*
 models/YoloV11n/runs/segment/mango_seg_v1-4/weights/*
 !models/YoloV11n/runs/segment/mango_seg_v1-4/weights/best.pt
 
-# --- Dataset images: hosted on Zenodo, see README ---
+# --- Dataset images: hosted on HuggingFace, see README ---
 images/
 
 # --- LaTeX build artifacts ---

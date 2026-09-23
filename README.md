@@ -55,7 +55,7 @@ To estimate external and internal properties accurately, features are passed thr
   - `depth_anything_v2/`: Core network architecture.
   - `depth_anything_v2_metric/`: DepthAnythingV2 wrappers for metric estimation.
 - **`labels/`**: Segmentations, annotations, and CSV databases of extracted physical properties.
-- **`images/`**: Dataset partition folders containing train/val/test images (not stored in git — archived on Zenodo, see [Model Weights & Dataset](#model-weights--dataset)).
+- **`images/`**: Dataset partition folders containing train/val/test images (663 images, ~1 GB — hosted on HuggingFace, see [Model Weights & Dataset](#model-weights--dataset)).
 - **`manuscript/`**: LaTeX source and compiled PDF of the paper.
 - **`notebook_aruco.ipynb`**: Interactive notebook demonstrating ArUco-calibrated model training and validation workflows.
 - **`notebook_noruco.ipynb`**: Interactive notebook demonstrating model training workflows on raw depth maps.
@@ -82,10 +82,11 @@ wget -P models/DepthAnythingV2 https://huggingface.co/depth-anything/Depth-Anyth
 
 ### Dataset images (~1 GB)
 
-The train/val/test image dataset is archived on Zenodo: **[DOI pending — will be added after upload]**. Download and extract to the project root:
+The train/val/test image dataset is hosted on HuggingFace Datasets: **[dataset URL pending — will be added after upload]**. Download with one line:
 
-```bash
-unzip mango-morphology-images.zip   # recreates images/
+```python
+from huggingface_hub import snapshot_download
+snapshot_download(repo_id="<user>/mango-morphology-images", repo_type="dataset", local_dir="images")
 ```
 
 ### Trained model artifacts (included in this repository)
