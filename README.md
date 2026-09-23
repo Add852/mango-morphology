@@ -82,11 +82,11 @@ wget -P models/DepthAnythingV2 https://huggingface.co/depth-anything/Depth-Anyth
 
 ### Dataset images (~1 GB)
 
-The train/val/test image dataset is hosted on HuggingFace Datasets: **[dataset URL pending — will be added after upload]**. Download with one line:
+The train/val/test image dataset is hosted on HuggingFace Datasets: [Add852/mango-morphology-images](https://huggingface.co/datasets/Add852/mango-morphology-images). Download with one line:
 
 ```python
 from huggingface_hub import snapshot_download
-snapshot_download(repo_id="<user>/mango-morphology-images", repo_type="dataset", local_dir="images")
+snapshot_download(repo_id="Add852/mango-morphology-images", repo_type="dataset", local_dir="images")
 ```
 
 ### Trained model artifacts (included in this repository)
